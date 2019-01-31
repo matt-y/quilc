@@ -40,7 +40,7 @@
 
 
 
-(defun give-up-compilation (&key (because ':invalid-compiler))
+(defun give-up-compilation (&key (because ':unknown))
   (ecase because
     (:invalid-domain (error 'compiler-invalid-domain))
     (:acts-trivially (error 'compiler-acts-trivially))

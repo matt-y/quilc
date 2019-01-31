@@ -245,8 +245,6 @@ Note that if (= START-NODE TARGET-NODE) then (list START-NODE) is returned."
      (give-up-compilation))))
 
 (defun CNOT-to-native-CNOTs (chip-spec cnot-gate)
-  ;; XXX This does not account for directedness of
-  ;; instructions. Should we fix this in *this* function or elsewhere.
   (unless (operator-match-p cnot-gate '("CNOT" () _ _))
     (give-up-compilation))
   (let* ((q1 (qubit-index (first (application-arguments cnot-gate))))
@@ -254,28 +252,25 @@ Note that if (= START-NODE TARGET-NODE) then (list START-NODE) is returned."
          ;; find a shortest path between the two qubits in the swap gate
          (computed-path (find-shortest-path-on-chip-spec chip-spec q1 q0)))
     (labels
-        ((build-CNOT-string (index-list prev-qubit)
-           (let* ((unoriented-qubit-indices (coerce (chip-spec-qubits-on-link chip-spec (first index-list))
-                                                    'list))
-                  (oriented-qubits (if (= prev-qubit (first unoriented-qubit-indices))
-                                       (mapcar #'qubit unoriented-qubit-indices)
-                                       (mapcar #'qubit (reverse unoriented-qubit-indices)))))
-             (cond
-               ;; base case
-               ((= 1 (length index-list))
-                (list (apply #'build-gate "CNOT" '() oriented-qubits)))
-               ;; recursive case
-               (t
-                (let ((temp-string (build-CNOT-string (rest index-list)
-                                                      (qubit-index (second oriented-qubits)))))
-                  (append
-                   (list
-                    (apply #'build-gate "CNOT" '() oriented-qubits))
-                   temp-string
-                   (list
-                    (apply #'build-gate "CNOT" '() oriented-qubits))
-                   temp-string)))))))
-      (build-CNOT-string computed-path q1))))
+        ((build-CNOT-string (qubit-string)
+           (cond
+             ;; base case
+             ((= 2 (length qubit-string))
+              (list (apply #'build-gate "CNOT" '() qubit-string)))
+             ;; recursive case
+             (t
+              (let ((inner-string (build-CNOT-string (rest qubit-string)))
+                    ;; one could also make a deep copy instead of running build-CNOT-string again
+                    (inner-string-copy (build-CNOT-string (rest qubit-string)))
+                    (first-two-qubits (list (first qubit-string) (second qubit-string))))
+                (append
+                 (list
+                  (apply #'build-gate "CNOT" '() first-two-qubits))
+                 inner-string
+                 (list
+                  (apply #'build-gate "CNOT" '() first-two-qubits))
+                 inner-string-copy))))))
+      (build-CNOT-string computed-path))))
 
 (defun CZ-to-native-CZs (chip-spec cz-gate)
   (operator-match
