@@ -17,7 +17,7 @@ NOTE: I believe that even though both objects (the double-coset space and the sp
 ;; is either an OPTIMAL-2Q-TARGET-ATOM or a(n unsorted) sequence of such atoms,
 ;; indicating which 2Q gates are available for use.
 (deftype optimal-2q-target-atom ()
-  '(member :cz :iswap :piswap :cphase))
+  '(member :cz :iswap :piswap :cphase :cnot))
 
 (defun sequence-of-optimal-2q-target-atoms-p (seq)
   (and (typep seq 'sequence)
@@ -27,16 +27,16 @@ NOTE: I believe that even though both objects (the double-coset space and the sp
 (deftype optimal-2q-target ()
   "A valid TARGET value for OPTIMAL-2Q-COMPILE."
   '(or optimal-2q-target-atom
-       (and sequence
-            (satisfies sequence-of-optimal-2q-target-atoms-p))))
+    (and sequence
+     (satisfies sequence-of-optimal-2q-target-atoms-p))))
 
 (defun optimal-2q-target-meets-requirements (target requirements)
-  (let ((targetl (if (typep target 'list) target (list target)))
-        (requirementsl (if (typep requirements 'list) requirements (list requirements))))
+  (let ((targetl       (alexandria:ensure-list target))
+        (requirementsl (alexandria:ensure-list requirements)))
     (when (member ':cphase targetl) (push ':cz targetl))
     (when (member ':piswap targetl) (push ':iswap targetl))
+    (when (member ':cnot targetl) (push ':cz targetl))
     (subsetp requirementsl targetl)))
-
 
 (defun convert-su4-to-su2x2 (m)
   "Assuming m is in the subgroup SU(2) x SU(2) of SU(4), this computes the parent matrices."
@@ -240,32 +240,6 @@ NOTE: I believe that even though both objects (the double-coset space and the sp
               m
               (su2-on-line 0 (gate-matrix (lookup-standard-gate "RY") sigma))
               (gate-matrix (lookup-standard-gate "ISWAP")))))))
-
-;; optimal-2Q-compile returns the smallest string of 2Q gates that it can, but
-;; what this means depends upon what gateset is available. the TARGET argument
-;; is either an OPTIMAL-2Q-TARGET-ATOM or a(n unsorted) sequence of such atoms,
-;; indicating which 2Q gates are available for use.
-(deftype optimal-2q-target-atom ()
-  '(member :cz :iswap :piswap :cphase :cnot))
-
-(defun sequence-of-optimal-2q-target-atoms-p (seq)
-  (and (typep seq 'sequence)
-       (every (lambda (a) (typep a 'optimal-2q-target-atom))
-              seq)))
-
-(deftype optimal-2q-target ()
-  "A valid TARGET value for OPTIMAL-2Q-COMPILE."
-  '(or optimal-2q-target-atom
-       (and sequence
-            (satisfies sequence-of-optimal-2q-target-atoms-p))))
-
-(defun optimal-2q-target-meets-requirements (target requirements)
-  (let ((targetl       (alexandria:ensure-list target))
-        (requirementsl (alexandria:ensure-list requirements)))
-    (when (member ':cphase targetl) (push ':cz targetl))
-    (when (member ':piswap targetl) (push ':iswap targetl))
-    (when (member ':cnot targetl) (push ':cz targetl))
-    (subsetp requirementsl targetl)))
 
 (defun gate-application-trivially-satisfies-2q-target-requirements (instr requirements)
   "Does the gate application INSTR trivially satisfy the requirements imposed by REQUIREMENTS? (In other words, do we actually need to do decomposition?)"
