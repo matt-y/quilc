@@ -176,7 +176,7 @@ NOTE: I believe that even though both objects (the double-coset space and the sp
       ;; first, we address the sort issue. the columns of a match the order of
       ;; the the values in angles, so we sort the two lists in parallel.\
       (let* ((angles (map 'list (lambda (x) (let ((ret (imagpart (log x))))
-                                              (if (double= ret (- pi)) pi ret)))
+                                         (if (double= ret (- pi)) pi ret)))
                           evals))
              (augmented-list
                (sort
