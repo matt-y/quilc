@@ -213,4 +213,14 @@ ISWAP 5 2"))
          (2q-code (program-2q-instructions cp)))
     (is (every (link-nativep chip) 2q-code))))
 
+(deftest test-cnot-triangle ()
+  (let* ((chip (quil::build-nq-linear-chip 3 :architecture ':cnot))
+         (orig-prog (quil::parse-quil-string "
+CNOT 1 0
+CNOT 2 1
+CNOT 0 2"))
+         (proc-prog (quil::compiler-hook orig-prog chip))
+         (2q-code (program-2q-instructions proc-prog)))
+    (is (matrix-equals-dwim (quil::gate-applications-to-logical-matrix orig-prog)
+                            (quil::gate-applications-to-logical-matrix proc-prog)))
     (is (every (link-nativep chip) 2q-code))))
