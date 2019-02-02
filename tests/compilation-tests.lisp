@@ -219,8 +219,9 @@ ISWAP 5 2"))
 CNOT 1 0
 CNOT 2 1
 CNOT 0 2"))
+         (orig-matrix (quil::gate-applications-to-logical-matrix orig-prog))
          (proc-prog (quil::compiler-hook orig-prog chip))
+         (proc-matrix (quil::gate-applications-to-logical-matrix proc-prog))
          (2q-code (program-2q-instructions proc-prog)))
-    (is (matrix-equals-dwim (quil::gate-applications-to-logical-matrix orig-prog)
-                            (quil::gate-applications-to-logical-matrix proc-prog)))
+    (is (matrix-equals-dwim orig-matrix proc-matrix))
     (is (every (link-nativep chip) 2q-code))))
